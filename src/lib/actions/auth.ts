@@ -67,7 +67,6 @@ export async function logoutAction(): Promise<void> {
 }
 
 export async function sendInviteAction(
-  _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
   const email = formData.get("email")?.toString().trim();
