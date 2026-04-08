@@ -3,9 +3,21 @@
 import { useMemo } from "react";
 import { SlotCreatePopover } from "./SlotCreatePopover";
 import { cn } from "@/lib/utils";
-import { format, startOfWeek, addDays, isSameDay } from "date-fns";
+import { format, addDays, isSameDay } from "date-fns";
 import { Trash2 } from "lucide-react";
 import type { Slot, SlotType } from "@/lib/types/database.types";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const HOUR_HEIGHT = 64; // px per hour
 const START_HOUR = 7; // calendar starts at 7am
@@ -175,15 +187,39 @@ export function WeekView({
                       </span>
                     )}
                     {slot.status === "available" && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteSlot(slot.id);
-                        }}
-                        className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity h-5 w-5 p-0"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete slot?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will permanently delete the slot at{" "}
+                              <strong>
+                                {format(new Date(slot.starts_at), "HH:mm")}
+                              </strong>
+                              . This cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => onDeleteSlot(slot.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     )}
                   </div>
                 ))}
