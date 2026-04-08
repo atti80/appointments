@@ -577,18 +577,31 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      check_template_conflicts: {
-        Args: {
-          p_ends_at: string[];
-          p_practitioner_id: string;
-          p_starts_at: string[];
-        };
-        Returns: {
-          conflict_ends_at: string;
-          conflict_starts_at: string;
-          conflict_status: Database["public"]["Enums"]["slot_status"];
-        }[];
-      };
+      check_template_conflicts:
+        | {
+            Args: {
+              p_ends_at: string[];
+              p_practitioner_id: string;
+              p_starts_at: string[];
+            };
+            Returns: {
+              conflict_ends_at: string;
+              conflict_starts_at: string;
+              conflict_status: Database["public"]["Enums"]["slot_status"];
+            }[];
+          }
+        | {
+            Args: {
+              p_ends_at: string[];
+              p_practitioner_id: string;
+              p_starts_at: string[];
+            };
+            Returns: {
+              conflict_ends_at: string;
+              conflict_starts_at: string;
+              conflict_status: Database["public"]["Enums"]["slot_status"];
+            }[];
+          };
       claim_stale_pending_appointments: {
         Args: { p_lock_seconds?: number };
         Returns: string[];
