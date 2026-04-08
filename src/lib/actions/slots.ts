@@ -74,6 +74,67 @@ export async function createSlotAction(
   return { success: true };
 }
 
+export async function updateSlotAction(
+  formData: FormData
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const serviceClient = await createServiceClient();
+
+  const { data: admin } = await supabase
+    .from("admins")
+    .select("office_id")
+    .single();
+
+  if (!admin) return { success: false, error: "Not authenticated" };
+
+  const id = formData.get("id")?.toString();
+  const starts_at = formData.get("starts_at")?.toString();
+  const ends_at = formData.get("ends_at")?.toString();
+  const slot_type_id = formData.get("slot_type_id")?.toString() || null;
+
+  if (!id) return { success: false, error: "Slot ID is required" };
+  if (!starts_at) return { success: false, error: "Start time is required" };
+  if (!ends_at) return { success: false, error: "End time is required" };
+
+  // Make sure slot is available before editing
+  const { data: slot } = await serviceClient
+    .from("slots")
+    .select("status")
+    .eq("id", id)
+    .single();
+
+  if (!slot) return { success: false, error: "Slot not found" };
+  if (slot.status !== "available")
+    return { success: false, error: "Only available slots can be edited" };
+
+  // Check for conflicts excluding this slot
+  const { data: conflicts } = await serviceClient
+    .from("slots")
+    .select("id")
+    .eq("practitioner_id", formData.get("practitioner_id")?.toString() ?? "")
+    .neq("id", id)
+    .lt("starts_at", ends_at)
+    .gt("ends_at", starts_at);
+
+  if (conflicts && conflicts.length > 0) {
+    return {
+      success: false,
+      error: "This time slot overlaps with an existing slot",
+    };
+  }
+
+  const { error } = await serviceClient
+    .from("slots")
+    .update({ starts_at, ends_at, slot_type_id })
+    .eq("id", id)
+    .eq("office_id", admin.office_id);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath("/dashboard/calendar");
+  return { success: true };
+}
+
 // ─── Delete slot ────────────────────────────────────────────────────────────
 
 export async function deleteSlotAction(slotId: string): Promise<ActionResult> {
@@ -121,6 +182,15 @@ export async function deleteSlotAction(slotId: string): Promise<ActionResult> {
 
 // ─── Apply template ─────────────────────────────────────────────────────────
 
+type TemplateSlotRow = {
+  id: string;
+  template_id: string;
+  slot_type_id: string | null;
+  day_of_week: string | null;
+  start_time: string;
+  end_time: string;
+};
+
 export async function applyTemplateAction(
   templateId: string,
   practitionerId: string,
@@ -154,14 +224,14 @@ export async function applyTemplateAction(
     slot_type_id: string | null;
   }[] = [];
 
-  for (const ts of template.template_slots as any[]) {
+  for (const ts of template.template_slots as TemplateSlotRow[]) {
     let slotDate: Date;
 
     if (template.type === "daily") {
       slotDate = anchor;
     } else {
       // weekly — map day_of_week to the actual date in the anchor's week
-      const diff = parseInt(ts.day_of_week) - dayOfWeek;
+      const diff = parseInt(ts.day_of_week ?? "0") - dayOfWeek;
       slotDate = new Date(anchor);
       slotDate.setDate(anchor.getDate() + diff);
     }

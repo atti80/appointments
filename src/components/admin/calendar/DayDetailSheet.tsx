@@ -112,58 +112,74 @@ export function DayDetailSheet({
                     new Date(b.starts_at).getTime()
                 )
                 .map((slot) => (
-                  <div
+                  <SlotCreatePopover
                     key={slot.id}
-                    className="flex items-center gap-3 rounded-lg border px-3 py-2.5"
+                    date={date}
+                    editSlot={slot}
+                    practitionerId={practitionerId}
+                    slotTypes={slotTypes}
+                    defaultSlotMins={defaultSlotMins}
+                    onCreated={() => {
+                      onRefresh();
+                    }}
                   >
-                    <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">
-                        {format(new Date(slot.starts_at), "HH:mm")}
-                        {" – "}
-                        {format(new Date(slot.ends_at), "HH:mm")}
-                      </p>
-                      {slot.slot_type && (
-                        <p className="text-xs text-muted-foreground">
-                          {slot.slot_type.name}
+                    <div
+                      key={slot.id}
+                      className="flex items-center gap-3 rounded-lg border px-3 py-2.5"
+                    >
+                      <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">
+                          {format(new Date(slot.starts_at), "HH:mm")}
+                          {" – "}
+                          {format(new Date(slot.ends_at), "HH:mm")}
                         </p>
+                        {slot.slot_type && (
+                          <p className="text-xs text-muted-foreground">
+                            {slot.slot_type.name}
+                          </p>
+                        )}
+                      </div>
+                      <Badge variant={STATUS_BADGE[slot.status] ?? "outline"}>
+                        {slot.status}
+                      </Badge>
+                      {slot.status === "available" && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={pending}
+                            >
+                              <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete slot?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete the slot at{" "}
+                                <strong>
+                                  {format(new Date(slot.starts_at), "HH:mm")}
+                                </strong>{" "}
+                                on <strong>{format(date, "MMMM d")}</strong>.
+                                This cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDelete(slot.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       )}
                     </div>
-                    <Badge variant={STATUS_BADGE[slot.status] ?? "outline"}>
-                      {slot.status}
-                    </Badge>
-                    {slot.status === "available" && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="sm" variant="ghost" disabled={pending}>
-                            <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete slot?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This will permanently delete the slot at{" "}
-                              <strong>
-                                {format(new Date(slot.starts_at), "HH:mm")}
-                              </strong>{" "}
-                              on <strong>{format(date, "MMMM d")}</strong>. This
-                              cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDelete(slot.id)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
-                  </div>
+                  </SlotCreatePopover>
                 ))}
             </div>
           )}

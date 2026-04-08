@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
-import { createSlotAction } from "@/lib/actions/slots";
+import { useState, useTransition } from "react";
+import { createSlotAction, updateSlotAction } from "@/lib/actions/slots";
 import { TimeInput } from "./TimeSpinner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -20,17 +20,19 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { LayoutTemplate } from "lucide-react";
-import type { SlotType } from "@/lib/types/database.types";
+import type { Slot, SlotType } from "@/lib/types/database.types";
 import { toLocalISO } from "@/lib/date";
 
 interface SlotCreatePopoverProps {
   children: React.ReactNode;
   date: Date;
-  initialHour?: number; // add this
+  initialHour?: number;
+  initialMinute?: number;
+  editSlot?: Slot; // if provided, we're in edit mode
   practitionerId: string;
   slotTypes: SlotType[];
   defaultSlotMins: number;
-  onTemplateClick: (date: Date) => void;
+  onTemplateClick?: (date: Date) => void; // optional — hidden in edit mode
   onCreated: () => void;
 }
 
@@ -45,6 +47,8 @@ export function SlotCreatePopover({
   children,
   date,
   initialHour,
+  initialMinute,
+  editSlot,
   practitionerId,
   slotTypes,
   defaultSlotMins,
@@ -105,13 +109,24 @@ export function SlotCreatePopover({
 
   function handleOpenChange(val: boolean) {
     if (val) {
-      const h = initialHour ?? 9;
-      setStartH(h);
-      setStartM(0);
-      const { h: eh, m: em } = fromMinutes(h * 60 + defaultSlotMins);
-      setEndH(eh);
-      setEndM(em);
-      setSlotTypeId("");
+      if (editSlot) {
+        const start = new Date(editSlot.starts_at);
+        const end = new Date(editSlot.ends_at);
+        setStartH(start.getHours());
+        setStartM(start.getMinutes());
+        setEndH(end.getHours());
+        setEndM(end.getMinutes());
+        setSlotTypeId(editSlot.slot_type_id ?? "");
+      } else {
+        const h = initialHour ?? 9;
+        const m = initialMinute ?? 0;
+        setStartH(h);
+        setStartM(m);
+        const { h: eh, m: em } = fromMinutes(h * 60 + m + defaultSlotMins);
+        setEndH(eh);
+        setEndM(em);
+        setSlotTypeId("");
+      }
       setError(null);
     }
     setOpen(val);
@@ -124,22 +139,23 @@ export function SlotCreatePopover({
       return;
     }
 
-    const starts_at = new Date(date);
-    starts_at.setHours(startH, startM, 0, 0);
-
-    const ends_at = new Date(date);
-    ends_at.setHours(endH, endM, 0, 0);
-
     const formData = new FormData();
-    formData.set("practitioner_id", practitionerId);
     formData.set("starts_at", toLocalISO(date, startH, startM));
     formData.set("ends_at", toLocalISO(date, endH, endM));
+    formData.set("practitioner_id", practitionerId);
     if (slotTypeId) formData.set("slot_type_id", slotTypeId);
 
+    if (editSlot) {
+      formData.set("id", editSlot.id);
+    }
+
     startTransition(async () => {
-      const result = await createSlotAction(formData);
+      const result = editSlot
+        ? await updateSlotAction(formData)
+        : await createSlotAction(formData);
+
       if (result.success) {
-        toast.success("Slot created");
+        toast.success(editSlot ? "Slot updated" : "Slot created");
         setOpen(false);
         onCreated();
       } else {
@@ -154,7 +170,9 @@ export function SlotCreatePopover({
       <PopoverContent className="w-64" align="start">
         <div className="flex flex-col gap-4">
           <div>
-            <p className="text-sm font-medium">New slot</p>
+            <p className="text-sm font-medium">
+              {editSlot ? "Edit" : "Create"} slot
+            </p>
             <p className="text-xs text-muted-foreground">
               {format(date, "EEEE, MMMM d")}
             </p>
@@ -199,19 +217,27 @@ export function SlotCreatePopover({
 
           <div className="flex flex-col gap-2">
             <Button onClick={handleSubmit} disabled={pending} size="sm">
-              {pending ? "Creating…" : "Create slot"}
+              {pending
+                ? editSlot
+                  ? "Saving…"
+                  : "Creating…"
+                : editSlot
+                  ? "Save changes"
+                  : "Create slot"}
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setOpen(false);
-                onTemplateClick(date);
-              }}
-            >
-              <LayoutTemplate className="w-4 h-4" />
-              Use template
-            </Button>
+            {!editSlot && onTemplateClick && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setOpen(false);
+                  onTemplateClick(date);
+                }}
+              >
+                <LayoutTemplate className="w-4 h-4" />
+                Use template
+              </Button>
+            )}
           </div>
         </div>
       </PopoverContent>

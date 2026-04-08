@@ -163,65 +163,75 @@ export function WeekView({
 
                 {/* Slot blocks */}
                 {daySlots.map((slot) => (
-                  <div
+                  <SlotCreatePopover
                     key={slot.id}
-                    className={cn(
-                      "absolute left-0.5 right-0.5 rounded border text-xs px-1 py-0.5 overflow-hidden group",
-                      STATUS_COLORS[slot.status] ?? STATUS_COLORS.available
-                    )}
-                    style={{
-                      top: slotTop(slot.starts_at),
-                      height: Math.max(
-                        slotHeight(slot.starts_at, slot.ends_at),
-                        20
-                      ),
-                    }}
+                    date={day}
+                    editSlot={slot}
+                    practitionerId={practitionerId}
+                    slotTypes={slotTypes}
+                    defaultSlotMins={defaultSlotMins}
+                    onCreated={onCreated}
                   >
-                    <span className="font-medium">
-                      {format(new Date(slot.starts_at), "HH:mm")} -{" "}
-                      {format(new Date(slot.ends_at), "HH:mm")}
-                    </span>
-                    {slot.slot_type && (
-                      <span className="ml-1 opacity-70">
-                        {slot.slot_type.name}
+                    <div
+                      key={slot.id}
+                      className={cn(
+                        "absolute left-0.5 right-0.5 rounded border text-xs px-1 py-0.5 overflow-hidden group cursor-pointer",
+                        STATUS_COLORS[slot.status] ?? STATUS_COLORS.available
+                      )}
+                      style={{
+                        top: slotTop(slot.starts_at),
+                        height: Math.max(
+                          slotHeight(slot.starts_at, slot.ends_at),
+                          20
+                        ),
+                      }}
+                    >
+                      <span className="font-medium">
+                        {format(new Date(slot.starts_at), "HH:mm")} -{" "}
+                        {format(new Date(slot.ends_at), "HH:mm")}
                       </span>
-                    )}
-                    {slot.status === "available" && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity h-5 w-5 p-0"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete slot?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This will permanently delete the slot at{" "}
-                              <strong>
-                                {format(new Date(slot.starts_at), "HH:mm")}
-                              </strong>
-                              . This cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => onDeleteSlot(slot.id)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      {slot.slot_type && (
+                        <span className="ml-1 opacity-70">
+                          {slot.slot_type.name}
+                        </span>
+                      )}
+                      {slot.status === "available" && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity h-5 w-5 p-0"
+                              onClick={(e) => e.stopPropagation()}
                             >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
-                  </div>
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete slot?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete the slot at{" "}
+                                <strong>
+                                  {format(new Date(slot.starts_at), "HH:mm")}
+                                </strong>
+                                . This cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => onDeleteSlot(slot.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
+                  </SlotCreatePopover>
                 ))}
               </div>
             </div>
